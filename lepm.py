@@ -1,5 +1,6 @@
 from typing import Dict, Any, Optional, List
 import pandas as pd # type: ignore
+import numpy as np # type: ignore
 import json
 from joblib import load # type: ignore
 
@@ -73,5 +74,6 @@ def predict_le(
     model, model_metadata = load_model()
     features_train = model_metadata['features_train']
     prediction = model.predict(feaures_for_model.to_dataframe()[features_train])[0]
+    prediction = np.clip(prediction, 0, 100)
     
     return {'prediction': prediction, 'features': feaures_for_model.dict(), 'transcripts': whisper_large}
