@@ -1,5 +1,5 @@
 import logging
-from lepm_api import config
+from listener_effort_api import config
 
 # Global LOGGER to store the logger instance
 global LOGGER

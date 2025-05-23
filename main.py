@@ -1,7 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, Form
-from typing import Dict, List
+from typing import Dict, Any
+from pydantic import BaseModel
+import base64
 import sys;sys.path.append('../')
-from lepm_api.lepm import predict_le
+from listener_effort_api.lepm import predict_le
 
 app = FastAPI()
 
@@ -17,20 +19,22 @@ def predict(input_dict: Dict[str, Dict]):
     listener_effort = predict_le(input_dict)
     return {"listener_effort": listener_effort}
 
+class AudioItem(BaseModel):
+    wav_b64: str
+    metadata: Dict[str, Any]
+    
+class PredictRequest(BaseModel):
+    files: Dict[str, AudioItem]
+
 @app.post("/predict_from_bytes")
-async def predict_from_bytes(
-    files: List[UploadFile] = File(...),
-    metadata: List[str]     = Form(...)
-):
-    print("Received files:", len(files))
+async def predict_from_bytes(req: PredictRequest):
     input_dict = {}
-    for i, (file_obj, meta) in enumerate(zip(files, metadata)):
-        wav = await file_obj.read()
-        input_dict[f'{i+1}_{file_obj.filename}'] = {
-            "wav_path":  file_obj.filename,
-            "wav_bytes": wav,
-            "metadata":  meta
+    for filename, item in req.files.items():
+        wav_bytes = base64.b64decode(item.wav_b64)
+        input_dict[filename] = {
+            "wav_path": filename,
+            "wav_bytes": wav_bytes,
+            "metadata": item.metadata
         }
-    print("Input dictionary:", input_dict.keys())
     results = predict_le(input_dict, from_bytes=True)
     return results

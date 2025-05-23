@@ -1,6 +1,6 @@
 import requests #type: ignore
 import sys;sys.path.append('../')
-from lepm_api.utils import get_logger
+from listener_effort_api.utils import get_logger
 logger = get_logger()
 
 input_dict = {

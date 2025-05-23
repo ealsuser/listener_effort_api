@@ -9,13 +9,14 @@
 
 ### Test app
 1. Run app
-2. poetry run python tests/test.py
+2. `poetry run python tests/test.py`
 
 ### Streamlit
 1. Run app
+2. `poetry shell`
 2. `streamlit run app.py`
 
 ### For commits
 Check if everything compiles with:
-1. `cd lepm_api`
+1. `cd listener_effort_api`
 2. `poetry run mypy .`

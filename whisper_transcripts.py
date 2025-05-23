@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional, List
 import inspect
 import tempfile
 import whisper_timestamped # type: ignore
-from lepm_api.utils import get_logger
+from listener_effort_api.utils import get_logger
 logger = get_logger()
 
 def get_transcript(
@@ -58,6 +58,7 @@ def get_transcript_from_bytes(
     """
     Get whisper transcription.
     """
+    wavs = wavs.copy()
     model = whisper_timestamped.load_model(model_size, device=device)
 
     all_results = {}

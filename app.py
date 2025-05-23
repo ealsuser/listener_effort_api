@@ -1,18 +1,9 @@
 import streamlit as st
-import requests
+import requests # type: ignore
+import base64, json
 
 # Page config & background
 st.set_page_config(page_title="Listener Effort Prediction", layout="centered")
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: rgba(255, 192, 203, 0.1);
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -33,16 +24,18 @@ recordings = [a for a in audio_files if a is not None]
 if recordings:
     if st.button("Analyze Listener Effort"):
         with st.spinner("Processing audios..."):
-            files_payload = [
-                ("files", (rec.name, rec, "audio/wav"))
-                for rec in recordings
-            ]
-            metadata = {"metadata": "Hello World"}
+            payload = {
+                "files": {
+                    f"{i+1}__{rec.name}": {
+                        "wav_b64": base64.b64encode(rec.read()).decode(),
+                        "metadata": {"metadata": f"File {i+1}"}
+                    }
+                    for i, rec in enumerate(recordings)
+                }
+            }
             resp = requests.post(
                 f"{BASE_URL}/predict_from_bytes",
-                
-                files=files_payload,
-                data=metadata,
+                json=payload,
                 timeout=120
             )
             resp.raise_for_status()

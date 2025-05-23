@@ -11,4 +11,4 @@ class LoggingConfig:
 
 @dataclass
 class Models:
-    models_path: str = "/home/ubuntu/git/LEPM_API/lepm_api/models/"
+    models_path: str = "/home/ubuntu/git/lepm_api/listener_effort_api/models/"

@@ -3,11 +3,11 @@ import pandas as pd # type: ignore
 import json
 from joblib import load # type: ignore
 
-from lepm_api.whisper_transcripts import get_transcript, get_transcript_from_bytes
-from lepm_api.whisper_features import get_whisper_features, WhisperFeatures
-from lepm_api.whisper_features import get_WER
-from lepm_api import config
-from lepm_api.utils import get_logger
+from listener_effort_api.whisper_transcripts import get_transcript, get_transcript_from_bytes
+from listener_effort_api.whisper_features import get_whisper_features, WhisperFeatures
+from listener_effort_api.whisper_features import get_WER
+from listener_effort_api import config
+from listener_effort_api.utils import get_logger
 logger = get_logger()
 
 def get_features_for_model(
@@ -59,9 +59,8 @@ def predict_le(
 
     # Get all Whisper transcripts
     if from_bytes:
-        wavs_to_transcribe = input_dict.copy()
-        whisper_large = get_transcript_from_bytes(wavs_to_transcribe, model_size='large-v2')
-        whisper_base = get_transcript_from_bytes(wavs_to_transcribe, model_size='base')
+        whisper_large = get_transcript_from_bytes(input_dict, model_size='large-v2')
+        whisper_base = get_transcript_from_bytes(input_dict, model_size='base')
     else:
         wavs_to_transcribe = [task_data['wav_path'] for task_data in input_dict.values()]
         whisper_large = get_transcript(wavs_to_transcribe, model_size='large-v2')

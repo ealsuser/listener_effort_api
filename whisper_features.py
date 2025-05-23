@@ -4,8 +4,8 @@ import jiwer
 import re
 from pydantic import BaseModel
 from typing import List, Dict, Any, Union
-from lepm_api.preprocess import clean_text
-from lepm_api.utils import get_logger
+from listener_effort_api.preprocess import clean_text
+from listener_effort_api.utils import get_logger
 logger = get_logger()
 
 ### WER

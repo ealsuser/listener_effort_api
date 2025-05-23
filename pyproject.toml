@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "lepm_api"
+name = "listener_effort_api"
 version = "0.1.0"
 description = ""
 authors = ["ealsuser <julian@everythingals.org>"]

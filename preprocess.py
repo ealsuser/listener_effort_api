@@ -1,6 +1,6 @@
 import re
 import numpy as np
-from lepm_api.utils import get_logger
+from listener_effort_api.utils import get_logger
 logger = get_logger()
 
 def replace_contractions(text):
