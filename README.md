@@ -5,7 +5,6 @@
 
 ### Run app
 1. `poetry run uvicorn main:app --reload`
-2. Open port: `poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000`
 
 ### Test app
 1. Run app
