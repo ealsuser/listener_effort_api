@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd # type: ignore
 import jiwer
 import re
-from pydantic import BaseModel
 from typing import List, Dict, Any, Union
+from listener_effort_api.items import WhisperFeatures
 from listener_effort_api.preprocess import clean_text
 from listener_effort_api.utils import get_logger
 logger = get_logger()
@@ -148,21 +148,6 @@ def get_whisper_confidences(
         return np.nan
 
 ### Get all features
-
-class WhisperFeatures(BaseModel):
-    speaking_rate_large_v2: float
-    articulation_rate: float
-    whisper_confidence_base: float
-    whisper_probs: float
-
-    @classmethod
-    def mean(cls, features_list: List["WhisperFeatures"]) -> "WhisperFeatures":
-        df = pd.DataFrame([f.dict() for f in features_list])
-        means = df.mean(axis=0).to_dict()
-        return cls(**means)
-
-    def to_dataframe(self) -> pd.DataFrame:
-        return pd.DataFrame([self.dict()])
 
 def get_whisper_features(
         whisper_result_large: Dict[str, Any],

@@ -34,7 +34,7 @@ if recordings:
                 }
             }
             resp = requests.post(
-                f"{BASE_URL}/predict_from_bytes",
+                f"{BASE_URL}/v1/listener-effort",
                 json=payload,
                 timeout=120
             )

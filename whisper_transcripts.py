@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional, List
+from listener_effort_api.items import SessionItem, WhisperTranscript
 import inspect
 import tempfile
 import whisper_timestamped # type: ignore
@@ -47,28 +48,27 @@ def get_transcript(
     return all_results
 
 def get_transcript_from_bytes(
-    wavs: Dict[str, Dict[str, bytes]],
-    model_size: Optional[str] = "large-v2",
-    device: Optional[str] = "cpu",
+    session: SessionItem,
+    model_size: str = "large-v2",
+    device: str = "cpu",
     initial_prompt: Optional[str] = None,
-    fp16: Optional[bool] = False,
+    fp16: bool = False,
     language: Optional[str] = "en"
-) -> Dict[str, Any]:
-
+) -> List[WhisperTranscript]:
+    
     """
     Get whisper transcription.
     """
-    wavs = wavs.copy()
+    session = session.copy()
     model = whisper_timestamped.load_model(model_size, device=device)
 
-    all_results = {}
-    for wav_name, task_data in wavs.items():
-        wav_bytes = task_data['wav_bytes']
+    all_results = []
+    for i, audio in enumerate(session.audios):
 
         # Do transcript
-        logger.info(f'Transcribing -> {wav_name}')
+        logger.info(f'Transcribing audio {i+1} of {len(session.audios)}')
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmpfile:
-            tmpfile.write(wav_bytes)
+            tmpfile.write(audio.wav)
             tmpfile.flush()
             audio = whisper_timestamped.load_audio(tmpfile.name)
             result = whisper_timestamped.transcribe(
@@ -82,12 +82,14 @@ def get_transcript_from_bytes(
             for param in signature.parameters.values()
             if param.default is not inspect.Parameter.empty
         }
+        
+        whisper_result = WhisperTranscript(
+            whisper_result=result,
+            model_size=model_size,
+            language=language,
+            params=default_args
+        )
 
-        all_results[wav_name] = {
-                "whisper_result": result,
-                "model_size": model_size,
-                "language": language,
-                "params": default_args,
-            }
+        all_results.append(whisper_result)
         
     return all_results

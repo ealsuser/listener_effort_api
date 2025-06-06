@@ -3,41 +3,40 @@ import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import json
 from joblib import load # type: ignore
-
-from listener_effort_api.whisper_transcripts import get_transcript, get_transcript_from_bytes
-from listener_effort_api.whisper_features import get_whisper_features, WhisperFeatures
-from listener_effort_api.whisper_features import get_WER
+from listener_effort_api.items import PredictRequest, SessionItem, WhisperTranscript, WhisperFeatures, PredictResponse, SessionResult, AudioResult
+from listener_effort_api.whisper_transcripts import get_transcript_from_bytes
+from listener_effort_api.whisper_features import get_whisper_features, get_WER
 from listener_effort_api import config
 from listener_effort_api.utils import get_logger
 logger = get_logger()
 
 def get_features_for_model(
-        input_dict: Dict[str, Dict],
-        whisper_large: Dict[str, Any],
-        whisper_base: Dict[str, Any],
-    ) -> pd.DataFrame:
+        session: SessionItem,
+        whisper_large: List[WhisperTranscript],
+        whisper_base: List[WhisperTranscript],
+    ) -> List[WhisperFeatures]:
 
     # Get all whisper features
     all_whisper_features = []
-    for audio_i, audio_i_data in input_dict.items():
+    for audio_i, audio in enumerate(session.audios):
 
         # Get this whisper transcript
-        wr_large_i = whisper_large[audio_i_data['wav_path']]
-        wr_base_i = whisper_base[audio_i_data['wav_path']]
+        w_large_i = whisper_large[audio_i]
+        w_base_i = whisper_base[audio_i]
 
         # Get whisper features
-        # wer = get_WER(audio_i_data['task_prompt'], wr_large_i['whisper_result']["text"])
+        # wer = get_WER(audio.transcript, w_large_i.whisper_result["text"])
         # if wer > .8:
-        #     logger.info(f"WER too high: {wer} for {audio_i_data['wav_path']}")
+        #     logger.info(f"WER too high: {wer} for audio number {audio_i+1}")
         #     continue
-        whisper_features = get_whisper_features(wr_large_i['whisper_result'], wr_base_i['whisper_result'])
+        whisper_features = get_whisper_features(w_large_i.whisper_result, w_base_i.whisper_result)
         all_whisper_features.append(whisper_features)
-        logger.info(f"Whisper features for {audio_i_data['wav_path']}: {whisper_features}")
+        logger.info(f"Whisper features for audio {audio_i+1} out of {len(session.audios)}: {whisper_features}")
     
     if len(all_whisper_features) == 0:
         logger.info("No whisper features to predict")
         return []
-    return WhisperFeatures.mean(all_whisper_features)
+    return all_whisper_features #WhisperFeatures.mean(all_whisper_features)
 
 def load_model() -> tuple:
     training_study = 'Speech_study' # 'Radcliff' # 'Speech_study' # 'Prilenia'
@@ -54,26 +53,65 @@ def load_model() -> tuple:
     return model, model_metadata
 
 def predict_le(
-        input_dict: Dict[str, Dict],
-        from_bytes: Optional[bool] = False,
-    ) -> Dict[str, Any]:
+        session: SessionItem,
+    ) -> SessionResult:
 
     # Get all Whisper transcripts
-    if from_bytes:
-        whisper_large = get_transcript_from_bytes(input_dict, model_size='large-v2')
-        whisper_base = get_transcript_from_bytes(input_dict, model_size='base')
-    else:
-        wavs_to_transcribe = [task_data['wav_path'] for task_data in input_dict.values()]
-        whisper_large = get_transcript(wavs_to_transcribe, model_size='large-v2')
-        whisper_base = get_transcript(wavs_to_transcribe, model_size='base')
+    whisper_large = get_transcript_from_bytes(session, model_size='large-v2')
+    whisper_base = get_transcript_from_bytes(session, model_size='base')
 
     # Get features for model
-    feaures_for_model = get_features_for_model(input_dict, whisper_large, whisper_base)
+    feaures_for_model = get_features_for_model(session, whisper_large, whisper_base)
 
     # Get model predictions
     model, model_metadata = load_model()
     features_train = model_metadata['features_train']
-    prediction = model.predict(feaures_for_model.to_dataframe()[features_train])[0]
-    prediction = np.clip(prediction, 0, 100)
+
+    # Audio predictions
+    audio_results = []
+    for audio_features in feaures_for_model:
+        try:
+            audio_prediction = model.predict(audio_features.to_dataframe()[features_train])[0]
+            audio_prediction = np.clip(audio_prediction, 0, 100)
+            audio_status = "ok"
+        except Exception as e:
+            logger.error(f"Error in predicting audio: {e}")
+            audio_prediction = np.nan
+            audio_status = str(e)
+        audio_result = AudioResult(
+            status=audio_status,
+            listener_effort=audio_prediction, 
+        )
+        audio_results.append(audio_result)
+
+    # Session prediction
+    try:
+        session_features = WhisperFeatures.mean(feaures_for_model).to_dataframe()
+        session_prediction = model.predict(session_features[features_train])[0]
+        session_prediction = np.clip(session_prediction, 0, 100)
+    except Exception as e:
+        logger.error(f"Error in predicting session: {e}")
+        session_prediction = np.nan
+    session_status = "ok" if all(a.status == "ok" for a in audio_results) else "error"
+    listener_effort_stddev = float(np.nanstd([audio.listener_effort for audio in audio_results]))
     
-    return {'prediction': prediction, 'features': feaures_for_model.dict(), 'transcripts': whisper_large}
+    return SessionResult(
+                status=session_status,
+                listener_effort=session_prediction, 
+                listener_effort_stddev=listener_effort_stddev,
+                audio_results=audio_results,
+            )
+
+def batch_predict_le(
+        req: PredictRequest,
+    ) -> PredictResponse:
+
+    """
+    Batch predict listener effort for multiple sessions.
+    """
+    results = []
+    for session in req.input:
+        result = predict_le(session)
+        results.append(result)
+    status = "ok" if all(res.status == "ok" for res in results) else "error"
+    return PredictResponse(status=status, result=results)

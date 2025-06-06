@@ -9,27 +9,52 @@ def load_wav_file(file_path):
         return f.read()
 
 payload = {
-    "files": {
-        "file_1": {
-            "wav_b64": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/03cd72ae-fbf6-484b-9d86-09f7230726bf/20230927-162950-A91472/14.wav')).decode(),
-            "metadata": {"user_id": '03cd72ae-fbf6-484b-9d86-09f7230726bf'}
+    "input": [
+        {
+            "audios": [
+                {
+                   "wav": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/03cd72ae-fbf6-484b-9d86-09f7230726bf/20230927-162950-A91472/19.wav')).decode(),
+                    "transcript": "The forest near my grandpa's cabin is said to contain mythical creatures."
+                },
+                {
+                    "wav": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/03cd72ae-fbf6-484b-9d86-09f7230726bf/20230927-162950-A91472/20.wav')).decode(),
+                    "transcript": None
+                },
+                {
+                    "wav": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/03cd72ae-fbf6-484b-9d86-09f7230726bf/20230927-162950-A91472/21.wav')).decode(),
+                    "transcript": None
+                }
+            ]
         },
-        "file_2": {
-            "wav_b64": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/03cd72ae-fbf6-484b-9d86-09f7230726bf/20230927-162950-A91472/15.wav')).decode(),
-            "metadata": {"user_id": '03cd72ae-fbf6-484b-9d86-09f7230726bf'}
+        {
+            "audios": [
+                {
+                   "wav": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/8430613e-9cfe-464c-b657-f24ea1e3b5f1/20230922-222930-A73246/19.wav')).decode(),
+                    "transcript": 'Why did the critics rate this book so favorably?'
+                },
+                {
+                    "wav": base64.b64encode(load_wav_file('/data-output/radcliff_data/2024-05-03/raw/aural/8430613e-9cfe-464c-b657-f24ea1e3b5f1/20230922-222930-A73246/20.wav')).decode(),
+                    "transcript": 'Many of his songs are the products of collaborations with other musicians.'
+                },
+            ]
         }
-    }
+    ]
 }
+
 
 def test_predict():
     """
     Test the predict function.
     """
     try:
-        response = requests.post('http://localhost:8000/predict_from_bytes', json=payload)
+        response = requests.post('http://localhost:8000/v1/listener-effort', json=payload)
         logger.info(f"Response: {response.json()}")
         assert response.status_code == 200
-        assert response.json()['prediction'] == 8.764874644468387
+        assert response.json()['status'] == "ok"
+        assert round(response.json()['result'][0]['listener_effort'], 3) == 0
+        assert round(response.json()['result'][0]['listener_effort_stddev'], 3) == 5.326
+        assert round(response.json()['result'][1]['listener_effort'], 3) == 80.617
+        assert round(response.json()['result'][1]['listener_effort_stddev'], 3) == 13.652
         logger.info("Test passed")
     except Exception as e:
         logger.error(f"Test failed: {e}")
