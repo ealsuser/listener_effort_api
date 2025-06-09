@@ -2,6 +2,7 @@ from typing import List
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import json
+import random
 from joblib import load # type: ignore
 from listener_effort_api.items import PredictRequest, SessionItem, WhisperTranscript, WhisperFeatures, PredictResponse, SessionResult, AudioResult
 from listener_effort_api.whisper_transcripts import get_transcript_from_bytes
@@ -105,6 +106,44 @@ def predict_le(
                 audio_results=audio_results,
             )
 
+def predict_le_mock(
+        session: SessionItem,
+    ) -> SessionResult:
+
+    # Audio predictions
+    audio_results = []
+    for _ in range(len(session.audios)):
+        if random.uniform(1, 100)>5:
+            audio_prediction = random.uniform(0, 100)
+            audio_status = "ok"
+        else:
+            audio_prediction = -1
+            audio_status = "mock error occurred"
+        audio_result = AudioResult(
+            status=audio_status,
+            listener_effort=audio_prediction, 
+        )
+        audio_results.append(audio_result)
+
+    # Session prediction
+    if random.uniform(1, 100)>10:
+        session_prediction = random.uniform(0, 100)
+        listener_effort_stddev = random.uniform(0, 100)
+        session_status = "ok"
+    else:
+        session_prediction = -1
+        listener_effort_stddev = -1
+        session_status = "mock error occurred"
+    if session_status == "ok":
+        session_status = "ok" if all(a.status == "ok" for a in audio_results) else "mock error occurred"
+
+    return SessionResult(
+                status=session_status,
+                listener_effort=session_prediction, 
+                listener_effort_stddev=listener_effort_stddev,
+                audio_results=audio_results,
+                )
+
 def batch_predict_le(
         req: PredictRequest,
     ) -> PredictResponse:
@@ -116,6 +155,7 @@ def batch_predict_le(
     for session in req.input:
         assert len(session.audios)<=3, f"Only up to 3 audios per session are supported, received {len(session.audios)}"
         result = predict_le(session)
+        # result = predict_le_mock(session)
         results.append(result)
     status = "ok" if all(res.status == "ok" for res in results) else "error"
     return PredictResponse(status=status, result=results)
