@@ -154,8 +154,8 @@ def batch_predict_le(
     results = []
     for session in req.input:
         assert len(session.audios)<=3, f"Only up to 3 audios per session are supported, received {len(session.audios)}"
-        result = predict_le(session)
-        # result = predict_le_mock(session)
+        # result = predict_le(session)
+        result = predict_le_mock(session)
         results.append(result)
     status = "ok" if all(res.status == "ok" for res in results) else "error"
     return PredictResponse(status=status, result=results)
