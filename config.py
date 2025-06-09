@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
 class Models:
-    models_path: str = "/home/ubuntu/git/lepm_api/listener_effort_api/models/"
+    models_path: str = str(Path(__file__).parent / "models")
 
 @dataclass
 class LoggingConfig:
