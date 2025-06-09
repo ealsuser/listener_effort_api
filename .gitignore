@@ -1,6 +1,8 @@
 *__pycache__/*
 *.pyc
-models/
 predictions/
 datasets/
 .env
+models/*
+!models/Speech_study_LinearRegression05_model_metadata.json
+!models/Speech_study_LinearRegression05_model.joblib

@@ -1,0 +1,22 @@
+{
+    "task_names": [
+        "11RW",
+        "13RW",
+        "15RW"
+    ],
+    "average_feature_by_session": true,
+    "target_by_session": true,
+    "features_train": [
+        "whisper_confidence_base",
+        "speaking_rate_large_v2"
+    ],
+    "use_holdout": false,
+    "model_save_name": "Speech_study_LinearRegression05_model",
+    "model_type": "LinearRegression",
+    "model_params": {
+        "copy_X": true,
+        "fit_intercept": true,
+        "n_jobs": null,
+        "positive": false
+    }
+}

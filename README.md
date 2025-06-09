@@ -1,7 +1,9 @@
 # LEPM API
 
 ### Setup
+If you want to avoid poetry, create a venv with python=3.10 and install `requirements.txt`
 1. `poetry install`
+2. create .env and complete the `EALS_LE_API_KEY`
 
 ### Run app
 1. `poetry run uvicorn main:app --reload`
@@ -17,7 +19,7 @@
 
 ### Jupyter Notebooks
 Create a conda env with poetry-specified dependencies.
-To update conda env in case of new dependencies, run steps 1, 3, and 4.
+To update an existing conda env in case of new dependencies, run steps 1, 3, and 4.
 1. `poetry export -f requirements.txt --without-hashes -o requirements.txt`
 2. `conda create -n listener-effort-api-env python=3.10`
 3. `conda activate listener-effort-api-env`
