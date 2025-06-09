@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import List
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import json
@@ -36,7 +36,7 @@ def get_features_for_model(
     if len(all_whisper_features) == 0:
         logger.info("No whisper features to predict")
         return []
-    return all_whisper_features #WhisperFeatures.mean(all_whisper_features)
+    return all_whisper_features
 
 def load_model() -> tuple:
     training_study = 'Speech_study' # 'Radcliff' # 'Speech_study' # 'Prilenia'
@@ -61,7 +61,7 @@ def predict_le(
     whisper_base = get_transcript_from_bytes(session, model_size='base')
 
     # Get features for model
-    feaures_for_model = get_features_for_model(session, whisper_large, whisper_base)
+    features_for_model = get_features_for_model(session, whisper_large, whisper_base)
 
     # Get model predictions
     model, model_metadata = load_model()
@@ -69,7 +69,7 @@ def predict_le(
 
     # Audio predictions
     audio_results = []
-    for audio_features in feaures_for_model:
+    for audio_features in features_for_model:
         try:
             audio_prediction = model.predict(audio_features.to_dataframe()[features_train])[0]
             audio_prediction = np.clip(audio_prediction, 0, 100)
@@ -86,13 +86,16 @@ def predict_le(
 
     # Session prediction
     try:
-        session_features = WhisperFeatures.mean(feaures_for_model).to_dataframe()
+        session_features = WhisperFeatures.mean(features_for_model).to_dataframe()
         session_prediction = model.predict(session_features[features_train])[0]
         session_prediction = np.clip(session_prediction, 0, 100)
+        session_status = "ok"
     except Exception as e:
         logger.error(f"Error in predicting session: {e}")
         session_prediction = np.nan
-    session_status = "ok" if all(a.status == "ok" for a in audio_results) else "error"
+        session_status = str(e)
+    if session_status == "ok":
+        session_status = "ok" if all(a.status == "ok" for a in audio_results) else "error"
     listener_effort_stddev = float(np.nanstd([audio.listener_effort for audio in audio_results]))
     
     return SessionResult(

@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, conlist
 import pandas as pd # type: ignore
 
 class AudioItem(BaseModel):
@@ -8,9 +8,6 @@ class AudioItem(BaseModel):
 
 class SessionItem(BaseModel):
     audios: List[AudioItem]
-    
-class PredictRequest(BaseModel):
-    input: List[SessionItem]
 
 class WhisperTranscript(BaseModel):
     whisper_result: Dict[str, Any]
@@ -32,6 +29,9 @@ class WhisperFeatures(BaseModel):
 
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame([self.dict()])
+
+class PredictRequest(BaseModel):
+    input: List[SessionItem]
 
 class AudioResult(BaseModel):
     status: str

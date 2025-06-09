@@ -1,8 +1,13 @@
 import requests #type: ignore
 import base64
+import os
+from dotenv import load_dotenv
 import sys;sys.path.append('../')
 from listener_effort_api.utils import get_logger
 logger = get_logger()
+
+# load .env into os.environ
+load_dotenv()
 
 def load_wav_file(file_path):
     with open(file_path, 'rb') as f:
@@ -47,7 +52,12 @@ def test_predict():
     Test the predict function.
     """
     try:
-        response = requests.post('http://localhost:8000/v1/listener-effort', json=payload)
+        token = os.getenv("EALS_LE_API_KEY")
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+        response = requests.post('http://localhost:8000/v1/listener-effort', json=payload, headers=headers)
         logger.info(f"Response: {response.json()}")
         assert response.status_code == 200
         assert response.json()['status'] == "ok"
